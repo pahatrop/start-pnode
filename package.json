@@ -1,0 +1,11 @@
+{
+  "name": "start-pnode",
+  "description": "Pnode agent",
+  "version": "1.0.0",
+  "author": "Pavel Tuhar <pahatrop@gmail.com>",
+  "bin": "./agent.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pahatrop/start-pnode.git"
+  }
+}

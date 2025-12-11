@@ -1,11 +1,17 @@
 {
   "name": "start-pnode",
   "description": "Pnode agent",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Pavel Tuhar <pahatrop@gmail.com>",
-  "bin": "./agent.js",
+  "bin": "./src/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/pahatrop/start-pnode.git"
+  },
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "commander": "^14.0.2",
+    "dotenv": "^17.2.3"
   }
 }

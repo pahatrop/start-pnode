@@ -1,7 +1,7 @@
 {
   "name": "start-pnode",
   "description": "Pnode agent",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Pavel Tuhar <pahatrop@gmail.com>",
   "bin": "./src/index.js",
   "repository": {
@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.13.2",
     "commander": "^14.0.2",
+    "dns2": "^2.1.0",
     "dotenv": "^17.2.3"
   }
 }

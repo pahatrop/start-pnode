@@ -3,8 +3,9 @@ import tls from "tls";
 import net from "net";
 import { EventEmitter } from "node:events";
 
-const CONTROL_CONNECTION_TYPE = "1";
-const SESSION_CONNECTION_TYPE = "2";
+const SESSION_CONNECTION_CODE = "2";
+const CONTROL_CONNECTION_CODE_FULL_AUTH = "1";
+const CONTROL_CONNECTION_CODE_TOKEN_ONLY = "3";
 
 export class Tunnel extends EventEmitter {
   #isWorking = false;
@@ -30,7 +31,7 @@ export class Tunnel extends EventEmitter {
     this.#rejectUnauthorized = options.rejectUnauthorized ?? true;
     this.#testMode = options.testMode ?? false;
     this.#reconnection = options.reconnection ?? {
-      timeout: 5_000,
+      timeout: 3_000,
       retries: 3,
     };
   }
@@ -39,13 +40,11 @@ export class Tunnel extends EventEmitter {
     this.#isWorking = true;
 
     if (remoteHost) {
-      this.#startControlConnection(remoteHost);
+      this.#startControlConnection([remoteHost]);
       return;
     }
 
-    this.#findFastestGateway().then((host) =>
-      this.#startControlConnection(host)
-    );
+    this.#findGateways().then((hosts) => this.#startControlConnection(hosts));
   }
 
   stop() {
@@ -56,21 +55,32 @@ export class Tunnel extends EventEmitter {
     }
   }
 
-  #startControlConnection(remoteHost, retry = 0) {
+  #startControlConnection(hosts, retry = 0) {
+    const [host] = hosts;
+
+    console.log(`Trying to start connection ${host}`);
+
     this.remoteSocket = tls.connect(
       {
-        host: remoteHost,
+        host,
         ...this.#getTlsOptions(),
       },
       () => {
         this.emit("started");
-        console.log(`Connected to ${remoteHost} via TLS`);
-        this.remoteSocket.write(
-          CONTROL_CONNECTION_TYPE +
-            this.#projectId +
-            this.#agentId +
-            this.#agentAccessToken
-        );
+        console.log(`Connected to ${host} via TLS`);
+
+        if (this.#projectId && this.#agentId && this.#agentAccessToken) {
+          this.remoteSocket.write(
+            CONTROL_CONNECTION_CODE_FULL_AUTH +
+              this.#projectId +
+              this.#agentId +
+              this.#agentAccessToken
+          );
+        } else {
+          this.remoteSocket.write(
+            CONTROL_CONNECTION_CODE_TOKEN_ONLY + this.#agentAccessToken
+          );
+        }
       }
     );
 
@@ -81,55 +91,68 @@ export class Tunnel extends EventEmitter {
       for (let i = 0; i + idLength <= message.length; i += idLength) {
         const sessionId = message.slice(i, i + idLength);
         console.log(`Session ID: ${sessionId}`);
-        this.#createSession(remoteHost, sessionId);
+        this.#createSession(host, sessionId);
       }
     });
 
     this.remoteSocket.on("close", () => {
       console.log("Control connection closed");
       this.emit("stopped");
+    });
+
+    this.remoteSocket.on("error", (err) => {
+      console.error("Control connection error:", err.message);
 
       if (this.#isWorking && retry <= this.#reconnection.retries) {
         console.log(`Reconnection timeout at: ${this.#reconnection.timeout}ms`);
         setTimeout(
-          () => this.#startControlConnection(remoteHost, retry + 1),
+          () =>
+            this.#startControlConnection(
+              [...hosts.slice(1), hosts[0]],
+              retry + 1
+            ),
           this.#reconnection.timeout
         );
       }
     });
-
-    this.remoteSocket.on("error", (err) => {
-      console.error("Control connection error:", err);
-      this.emit("error", err);
-    });
   }
 
-  async #findFastestGateway() {
-    const timeout = 1000;
+  async #findGateways() {
+    const timeout = 2000;
     const resolver = new dns();
     const { answers } = await resolver.resolveA(
       `${this.#gatewaySubdomain}.${this.#domain}`
     );
 
-    return Promise.race(
+    const liveGateways = [];
+
+    await Promise.all(
       answers
         .filter((answer) => answer.address)
         .map(async (answer) => {
-          let ok = false;
+          let alive = false;
+
           try {
-            ok = await this.#measureSpeed(
+            alive = await this.#measureSpeed(
               answer.address,
               this.#gatewayPort,
               timeout
-            ).then((result) => result.ok);
+            ).then((result) => result.success);
+
+            if (alive) {
+              liveGateways.push(answer.address);
+            }
           } finally {
-            if (!ok) {
-              await new Promise((resolve) => setTimeout(resolve, timeout));
+            if (!alive) {
+              console.log(
+                `Gateway ${answer.address} is not responding. Skipping...`
+              );
             }
           }
-          return answer.address;
         })
     );
+
+    return liveGateways;
   }
 
   #createSession(remoteHost, sessionId) {
@@ -139,7 +162,7 @@ export class Tunnel extends EventEmitter {
         ...this.#getTlsOptions(),
       },
       () => {
-        remoteSocket.write(SESSION_CONNECTION_TYPE + sessionId);
+        remoteSocket.write(SESSION_CONNECTION_CODE + sessionId);
 
         if (this.#testMode) {
           remoteSocket.on("data", () => {
@@ -207,15 +230,15 @@ export class Tunnel extends EventEmitter {
       socket.setTimeout(timeout);
 
       socket.once("connect", () => {
-        end({ ip, time: Date.now() - start, ok: true });
+        end({ ip, time: Date.now() - start, success: true });
       });
 
       socket.once("timeout", () => {
-        end({ ip, time: timeout, ok: false });
+        end({ ip, time: timeout, success: false });
       });
 
       socket.once("error", () => {
-        end({ ip, time: timeout, ok: false });
+        end({ ip, time: timeout, success: false });
       });
 
       socket.connect(port, ip);

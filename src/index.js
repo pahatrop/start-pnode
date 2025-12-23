@@ -18,8 +18,6 @@ program
 program
   .command("run", { isDefault: true })
   .description("Start local tunnel")
-  .addOption(new Option("--project <id>", "Project id").env("PROJECT_ID"))
-  .addOption(new Option("--agent <id>", "Agent id").env("AGENT_ID"))
   .addOption(new Option("--token <token>", "Agent token").env("AGENT_TOKEN"))
   .addOption(
     new Option("--port <port>", "Local forwarded port")
@@ -35,11 +33,11 @@ program
       throw new Error("Invalid port");
     }
 
-    let projectId = options.project;
-    let agentId = options.agent;
+    let projectId = null;
+    let agentId = null;
     let agentAccessToken = options.token;
 
-    if (!projectId || !agentId || !agentAccessToken) {
+    if (!agentAccessToken) {
       console.log("Starting temporary tunnel");
 
       const tmpProject = await createTempProject(apiUrl);
@@ -57,14 +55,19 @@ program
       projectId,
       agentId,
       agentAccessToken,
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
       testMode,
     });
 
     proxy.start();
 
-    process.on("exit", () => proxy.stop());
-    process.on("SIGINT", () => proxy.stop());
+    const stopApp = () => {
+      proxy.stop();
+      setTimeout(() => process.exit(0), 3_000);
+    };
+
+    process.on("exit", stopApp);
+    process.on("SIGINT", stopApp);
   });
 
 program.parse();

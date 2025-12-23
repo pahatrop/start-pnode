@@ -2,6 +2,7 @@ import dns from "dns2";
 import tls from "tls";
 import net from "net";
 import { EventEmitter } from "node:events";
+import { v4 } from "uuid";
 
 const SESSION_CONNECTION_CODE = "2";
 const CONTROL_CONNECTION_CODE_FULL_AUTH = "1";
@@ -16,6 +17,7 @@ export class Tunnel extends EventEmitter {
   #projectId;
   #agentId;
   #agentAccessToken;
+  #sessionId;
   #rejectUnauthorized;
   #testMode;
   #reconnection;
@@ -59,30 +61,29 @@ export class Tunnel extends EventEmitter {
     const [host] = hosts;
 
     console.log(`Trying to start connection ${host}`);
+    this.#sessionId = v4();
 
-    this.remoteSocket = tls.connect(
-      {
-        host,
-        ...this.#getTlsOptions(),
-      },
-      () => {
-        this.emit("started");
-        console.log(`Connected to ${host} via TLS`);
+    const options = {
+      host,
+      ...this.#getTlsOptions(),
+    };
+    this.remoteSocket = tls.connect(options, () => {
+      this.emit("started");
+      console.log(`Connected to ${options.servername} (${host}) via TLS`);
 
-        if (this.#projectId && this.#agentId && this.#agentAccessToken) {
-          this.remoteSocket.write(
-            CONTROL_CONNECTION_CODE_FULL_AUTH +
-              this.#projectId +
-              this.#agentId +
-              this.#agentAccessToken
-          );
-        } else {
-          this.remoteSocket.write(
-            CONTROL_CONNECTION_CODE_TOKEN_ONLY + this.#agentAccessToken
-          );
-        }
+      if (this.#projectId && this.#agentId && this.#agentAccessToken) {
+        this.remoteSocket.write(
+          CONTROL_CONNECTION_CODE_FULL_AUTH +
+            this.#projectId +
+            this.#agentId +
+            this.#agentAccessToken
+        );
+      } else {
+        this.remoteSocket.write(
+          CONTROL_CONNECTION_CODE_TOKEN_ONLY + this.#agentAccessToken
+        );
       }
-    );
+    });
 
     this.remoteSocket.on("data", (data) => {
       const idLength = 36;
@@ -206,7 +207,9 @@ export class Tunnel extends EventEmitter {
   #getTlsOptions() {
     return {
       rejectUnauthorized: this.#rejectUnauthorized,
-      servername: `${this.#gatewaySubdomain}-${this.#agentId}.${this.#domain}`,
+      servername: `${this.#gatewaySubdomain}-${this.#sessionId}.${
+        this.#domain
+      }`,
       port: this.#gatewayPort,
     };
   }

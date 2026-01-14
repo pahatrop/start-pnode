@@ -14,6 +14,7 @@ export class Tunnel extends EventEmitter {
   #domain;
   #gatewayPort;
   #localPort;
+  #localHost;
   #projectId;
   #agentId;
   #agentAccessToken;
@@ -27,6 +28,7 @@ export class Tunnel extends EventEmitter {
     this.#domain = options.domain;
     this.#gatewayPort = options.gatewayPort;
     this.#localPort = options.localPort;
+    this.#localHost = options.localHost || "localhost";
     this.#projectId = options.projectId;
     this.#agentId = options.agentId;
     this.#agentAccessToken = options.agentAccessToken;
@@ -180,7 +182,7 @@ export class Tunnel extends EventEmitter {
             remoteSocket.end();
           });
         } else {
-          const localSocket = net.connect(this.#localPort, "localhost");
+          const localSocket = net.connect(this.#localPort, this.#localHost);
 
           remoteSocket.pipe(localSocket);
           localSocket.pipe(remoteSocket);

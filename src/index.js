@@ -24,10 +24,16 @@ program
       .default(3000)
       .env("LOCAL_PORT")
   )
+  .addOption(
+    new Option("--host <host>", "Local forwarded host")
+      .default("localhost")
+      .env("LOCAL_HOST")
+  )
   .addOption(new Option("-t, --test", "Test mode").env("TEST_MODE"))
   .action(async (options) => {
     const testMode = !!options.test;
     const localPort = Number(options.port);
+    const localHost = options.host;
 
     if (!(localPort > 0 && localPort < 65535)) {
       throw new Error("Invalid port");
@@ -52,6 +58,7 @@ program
       domain,
       gatewayPort: 50000,
       localPort,
+      localHost,
       projectId,
       agentId,
       agentAccessToken,

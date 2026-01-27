@@ -1,7 +1,7 @@
 {
   "name": "start-pnode",
   "description": "Pnode agent",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "author": "Pavel Tuhar <pahatrop@gmail.com>",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -19,7 +19,18 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist",
+    "dist/cli.cjs",
+    "dist/cli.cjs.map",
+    "dist/cli.mjs",
+    "dist/cli.mjs.map",
+    "dist/cli.d.ts",
+    "dist/cli.d.mts",
+    "dist/index.cjs",
+    "dist/index.cjs.map",
+    "dist/index.mjs",
+    "dist/index.mjs.map",
+    "dist/index.d.ts",
+    "dist/index.d.mts",
     "README.md",
     "LICENSE"
   ],

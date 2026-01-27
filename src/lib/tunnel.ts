@@ -12,10 +12,16 @@ const SESSION_CONNECTION_CODE = "2";
 const CONTROL_CONNECTION_CODE_FULL_AUTH = "1";
 const CONTROL_CONNECTION_CODE_TOKEN_ONLY = "3";
 
-export class Tunnel extends EventEmitter {
+interface TunnelEvents {
+  started: [];
+  stopped: [];
+  error: [Error];
+}
+
+export class Tunnel extends EventEmitter<TunnelEvents> {
   private isWorking = false;
   private gatewaySubdomain = "agent-gateway";
-  private readonly domain: string;
+  private readonly rootDomain: string;
   private readonly gatewayPort: number;
   private readonly localPort: number;
   private readonly localHost: string;
@@ -30,7 +36,7 @@ export class Tunnel extends EventEmitter {
 
   constructor(options: TunnelOptions) {
     super();
-    this.domain = options.domain || DEFAULT_CONFIG.domain;
+    this.rootDomain = options.domain || DEFAULT_CONFIG.domain;
     this.gatewayPort = options.gatewayPort || DEFAULT_CONFIG.gatewayPort;
     this.localPort = options.localPort;
     this.localHost = options.localHost || "localhost";
@@ -130,7 +136,7 @@ export class Tunnel extends EventEmitter {
     const timeout = 2000;
     const resolver = new dns2();
     const { answers } = await resolver.resolveA(
-      `${this.gatewaySubdomain}.${this.domain || "pnode.site"}`
+      `${this.gatewaySubdomain}.${this.rootDomain}`
     );
 
     const liveGateways: string[] = [];
@@ -179,7 +185,7 @@ export class Tunnel extends EventEmitter {
               remoteHost,
               this.agentId,
               this.projectId,
-              this.domain
+              this.rootDomain
             );
             const response =
               "HTTP/1.1 200 OK\r\n" +
@@ -224,7 +230,7 @@ export class Tunnel extends EventEmitter {
     return {
       rejectUnauthorized: this.rejectUnauthorized,
       servername: `${this.gatewaySubdomain}-${this.sessionId || "unknown"}.${
-        this.domain
+        this.rootDomain
       }`,
       port: this.gatewayPort,
     };

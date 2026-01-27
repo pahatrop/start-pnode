@@ -64,6 +64,28 @@ Authorized mode provides:
 
 ---
 
+## Using in your apps
+
+```typescript
+import { Tunnel } from 'start-pnode';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
+
+const port = 3000;
+
+const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+  res.end('Hello world!');
+});
+
+server.listen(port, '127.0.0.1', () => {
+  const proxy = new Tunnel({
+    agentAccessToken: '<YOUR_TOKEN>',
+    localPort: port,
+  });
+  proxy.start();
+  proxy.on('stopped', () => server.close());
+});
+```
+
 ## Environment Variables
 
 ### Anonymous Mode
@@ -87,6 +109,7 @@ Optional:
 Options:
   --token <token>   Agent token (env: AGENT_TOKEN)
   --port <port>     Local forwarded port (env: LOCAL_PORT)
+  --host <host>     Local forwarded host (default: "localhost", env: LOCAL_HOST)
   -t, --test        Test mode
   -h, --help        Display help
 ```

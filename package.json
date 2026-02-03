@@ -1,7 +1,7 @@
 {
   "name": "start-pnode",
   "description": "Pnode agent",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "author": "Pavel Tuhar <pahatrop@gmail.com>",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

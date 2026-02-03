@@ -36,7 +36,7 @@ export class Tunnel extends EventEmitter<TunnelEvents> {
 
   constructor(options: TunnelOptions) {
     super();
-    this.rootDomain = options.domain || DEFAULT_CONFIG.domain;
+    this.rootDomain = options.domain || DEFAULT_CONFIG.mainDomain;
     this.gatewayPort = options.gatewayPort || DEFAULT_CONFIG.gatewayPort;
     this.localPort = options.localPort;
     this.localHost = options.localHost || "localhost";
@@ -204,11 +204,36 @@ export class Tunnel extends EventEmitter<TunnelEvents> {
           localSocket.pipe(remoteSocket);
 
           localSocket.on("error", (err) => {
-            console.error("Local service error:", err.message);
+            if ("code" in err && err.code === "ECONNREFUSED") {
+              console.error("Connection to local server refused");
+
+              const content = JSON.stringify(
+                {
+                  message: "Connection to local server refused",
+                  host: this.localHost,
+                  port: this.localPort,
+                },
+                null,
+                2
+              );
+              const response =
+                "HTTP/1.1 424 Connection to local server refused\r\n" +
+                "Content-Type: application/json; charset=UTF-8\r\n" +
+                `Content-Length: ${Buffer.byteLength(content)}\r\n` +
+                "Connection: close\r\n" +
+                "\r\n" +
+                content;
+
+              remoteSocket.write(response);
+              remoteSocket.end();
+              return;
+            }
+
+            console.error("Local service error:", err);
           });
 
           remoteSocket.on("error", (err) => {
-            console.error("Remote proxy error:", err.message);
+            console.error("Remote proxy error:", err);
           });
 
           remoteSocket.on("close", () => localSocket.end());

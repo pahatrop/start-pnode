@@ -33,17 +33,17 @@ async function createTunnel(
 
   if (!agentAccessToken) {
     console.log("Starting temporary tunnel");
-    const tmpProject = await createTempProject(DEFAULT_CONFIG.apiUrl);
+    const tmpProject = await createTempProject(DEFAULT_CONFIG.apiDomain);
     projectId = tmpProject.id || undefined;
     agentId = tmpProject.agentId || undefined;
     agentAccessToken = tmpProject.agentAccessToken || undefined;
     console.log(
-      `Created project https://${tmpProject.name}.${DEFAULT_CONFIG.domain}`
+      `Created project https://${tmpProject.name}.${DEFAULT_CONFIG.mainDomain}`
     );
   }
 
   return new Tunnel({
-    domain: DEFAULT_CONFIG.domain,
+    domain: DEFAULT_CONFIG.mainDomain,
     gatewayPort: DEFAULT_CONFIG.gatewayPort,
     localPort,
     localHost,

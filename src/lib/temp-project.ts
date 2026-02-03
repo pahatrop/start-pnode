@@ -3,6 +3,7 @@ import * as os from "os";
 import * as crypto from "crypto";
 import { version } from "../types/version";
 import { DeviceInfo, TempProjectResponse, ProjectError } from "../types";
+import { httpFailover } from "../utils/http-failover";
 
 function getDeviceInfo(): DeviceInfo {
   const nets = os.networkInterfaces();
@@ -31,21 +32,21 @@ function getDeviceInfo(): DeviceInfo {
 }
 
 export async function createTempProject(
-  apiUrl: string
+  apiDomain: string
 ): Promise<TempProjectResponse> {
   const { deviceId, meta } = getDeviceInfo();
 
   try {
-    const response = await axios.post<TempProjectResponse>(
-      `${apiUrl}/projects/ephemeral`,
-      {
-        deviceId,
-        meta,
-      }
-    );
-
     const { id, name, agentId, agentAccessToken, expiredTimestamp } =
-      response.data;
+      await httpFailover<TempProjectResponse>({
+        domain: apiDomain,
+        path: "/projects/ephemeral",
+        method: "POST",
+        data: {
+          deviceId,
+          meta,
+        },
+      });
 
     if (!id || !agentId || !agentAccessToken) {
       throw new ProjectError("Incorrect response from server");
@@ -53,6 +54,10 @@ export async function createTempProject(
 
     return { id, name, agentId, agentAccessToken, expiredTimestamp };
   } catch (error) {
+    if (error instanceof ProjectError) {
+      throw error;
+    }
+
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       if (axiosError.response?.data) {

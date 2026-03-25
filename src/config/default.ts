@@ -1,5 +1,5 @@
 export const DEFAULT_CONFIG = {
-  mainDomain: "pnode.site",
-  apiDomain: "api.pnode.site",
+  mainDomain: "tunyl.com",
+  apiDomain: "api.tunyl.com",
   gatewayPort: 50000,
 };

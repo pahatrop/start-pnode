@@ -6,7 +6,7 @@ import { version } from "./types/version";
 import { createTempProject } from "./lib/temp-project";
 import { Tunnel } from "./lib/tunnel";
 import { DEFAULT_CONFIG } from "./config/default";
-import { CreateTunnelOptions, PNodeError, TunnelInstance } from "./types";
+import { CreateTunnelOptions, TunylError, TunnelInstance } from "./types";
 
 config({ quiet: true });
 
@@ -24,7 +24,7 @@ async function createTunnel(
   } = options;
 
   if (!testMode && !(localPort > 0 && localPort < 65535)) {
-    throw new PNodeError("Invalid port number");
+    throw new TunylError("Invalid port number");
   }
 
   let projectId: string | undefined = undefined;
@@ -80,7 +80,7 @@ async function startTunnel(
 
 // CLI functionality - always run when called as bin
 program
-  .name("pnode")
+  .name("tunyl")
   .description("CLI for launching http tunnel")
   .version(version);
 

@@ -1,14 +1,13 @@
 {
-  "name": "start-pnode",
-  "description": "Pnode agent",
-  "version": "1.0.10",
+  "name": "tunyl",
+  "description": "Tunyl agent",
+  "version": "1.0.11",
   "author": "Pavel Tuhar <pahatrop@gmail.com>",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "pnode": "./dist/cli.cjs",
-    "start-pnode": "./dist/cli.cjs"
+    "tunyl": "./dist/cli.cjs"
   },
   "exports": {
     ".": {
@@ -36,7 +35,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/pahatrop/start-pnode.git"
+    "url": "https://github.com/pahatrop/tunyl.git"
   },
   "type": "commonjs",
   "scripts": {
@@ -51,7 +50,7 @@
     "proxy",
     "cli",
     "typescript",
-    "pnode",
+    "tunyl",
     "ngrok",
     "localtunnel"
   ],

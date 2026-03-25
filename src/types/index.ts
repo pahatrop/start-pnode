@@ -26,7 +26,7 @@ export interface TunnelOptions {
   reconnection?: { timeout: number; retries: number };
 }
 
-export interface PNodeConfig {
+export interface TunylConfig {
   apiUrl: string;
   domain: string;
   gatewayPort: number;
@@ -44,25 +44,25 @@ export interface TunnelInstance extends EventEmitter {
   stop(): void;
 }
 
-export class PNodeError extends Error {
+export class TunylError extends Error {
   constructor(
     message: string,
     public code?: string,
     public statusCode?: number
   ) {
     super(message);
-    this.name = "PNodeError";
+    this.name = "TunylError";
   }
 }
 
-export class TunnelError extends PNodeError {
+export class TunnelError extends TunylError {
   constructor(message: string, code?: string) {
     super(message, code);
     this.name = "TunnelError";
   }
 }
 
-export class ProjectError extends PNodeError {
+export class ProjectError extends TunylError {
   constructor(message: string, statusCode?: number) {
     super(message, "PROJECT_ERROR", statusCode);
     this.name = "ProjectError";
